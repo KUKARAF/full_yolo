@@ -1,0 +1,44 @@
+[
+  {
+    "regex": "^ARCHITECT:\\s*",
+    "prompt": "architect",
+    "strip_prefix": true,
+    "description": "System design, architecture decisions, tech stack choices"
+  },
+  {
+    "regex": "^RESEARCH:\\s*",
+    "prompt": "research",
+    "strip_prefix": true,
+    "description": "Web research, library comparison, information gathering"
+  },
+  {
+    "regex": "^TEST:\\s*",
+    "prompt": "test",
+    "strip_prefix": true,
+    "description": "Writing and running tests"
+  },
+  {
+    "regex": "^REVIEW:\\s*",
+    "prompt": "review",
+    "strip_prefix": true,
+    "description": "Code review and quality analysis"
+  },
+  {
+    "regex": "^REFACTOR:\\s*",
+    "prompt": "refactor",
+    "strip_prefix": true,
+    "description": "Code refactoring and cleanup"
+  },
+  {
+    "regex": "^DEPLOY:\\s*",
+    "prompt": "deploy",
+    "strip_prefix": true,
+    "description": "Deployment and infrastructure tasks"
+  },
+  {
+    "regex": ".*",
+    "prompt": "todo",
+    "strip_prefix": false,
+    "description": "General implementation tasks (catch-all)"
+  }
+]
