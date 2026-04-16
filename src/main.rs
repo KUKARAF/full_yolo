@@ -69,7 +69,7 @@ struct Cli {
     todo: PathBuf,
 
     /// Path or name of the claude binary
-    #[arg(long, env = "FULL_YOLO_CLAUDE_BIN", default_value = "claude")]
+    #[arg(short = 'c', long = "claude", env = "FULL_YOLO_CLAUDE_BIN", default_value = "claude")]
     claude_bin: String,
 
     /// Claude model alias or full model ID
