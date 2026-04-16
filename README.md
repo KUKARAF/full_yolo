@@ -54,8 +54,9 @@ The container mounts your current directory as `/workspace`. Claude reads and wr
 
 | Prefix | What Claude does | Allowed tools |
 |--------|-----------------|---------------|
-| `RESEARCH:` | Web search + write a research doc | WebSearch, WebFetch, Write |
+| `RESEARCH:` | Web search + write a research doc | WebSearch, WebFetch, Read, Write |
 | `ARCHITECT:` | Design doc + stubs | Read, Write, Edit, Glob |
+| `GRAPHIC:` | Color palette (thecolorapi) + SVG/CSS via OpenRouter nanobanana | Bash, WebFetch, Read, Write |
 | `TEST:` | Write + run tests | Bash, Read, Write, Edit |
 | *(none)* | Implement it | Read, Write, Edit, Bash, Glob, Grep |
 

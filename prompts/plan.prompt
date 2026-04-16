@@ -1,5 +1,6 @@
 ---
 allowedTools:
+  - Bash
   - Read
   - Write
   - Glob
@@ -7,6 +8,28 @@ allowedTools:
 ---
 
 You are a project planning assistant operating in an autonomous coding loop.
+
+## Step 0 — Session setup (run this before anything else)
+
+Check whether external secret stores are available and warm up sessions so
+later tasks don't stall on auth:
+
+```bash
+# Check for kv secrets CLI — if present, verify the session is live
+if command -v kv &>/dev/null; then
+    echo "kv CLI found — verifying session..."
+    kv get OPENROUTER_API_KEY &>/dev/null \
+        && echo "  ✓ OPENROUTER_API_KEY present in kv store" \
+        || echo "  ⚠ OPENROUTER_API_KEY not found (add it with: kv set OPENROUTER_API_KEY <key>)"
+else
+    echo "kv CLI not installed — will rely on .env for secrets"
+fi
+```
+
+Note any missing keys in the todo.md preamble as warnings so humans can act
+on them before the loop reaches a GRAPHIC: task.
+
+---
 
 ## Your Task
 Analyse the current project directory and create a `todo.md` file that breaks down the following goal into actionable steps:
@@ -42,6 +65,7 @@ Analyse the current project directory and create a `todo.md` file that breaks do
 |--------|-------------|
 | `RESEARCH:` | You need to search the internet or gather information before implementation |
 | `ARCHITECT:` | A significant design decision needs to be made and documented |
+| `GRAPHIC:` | Visual / design work: color palettes, SVG illustrations, CSS design systems. Requires `OPENROUTER_API_KEY`. |
 | `TEST:` | Writing tests, running a test suite, or verifying correctness |
 | *(none)* | Regular implementation work |
 

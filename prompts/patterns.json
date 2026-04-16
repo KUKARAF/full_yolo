@@ -36,6 +36,12 @@
     "description": "Deployment and infrastructure tasks"
   },
   {
+    "regex": "^GRAPHIC:\\s*",
+    "prompt": "graphic",
+    "strip_prefix": true,
+    "description": "Graphic design: color palettes via thecolorapi + generative assets via OpenRouter nanobanana"
+  },
+  {
     "regex": ".*",
     "prompt": "todo",
     "strip_prefix": false,

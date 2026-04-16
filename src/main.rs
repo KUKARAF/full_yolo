@@ -18,6 +18,7 @@ const DEFAULT_ARCHITECT_PROMPT: &str = include_str!("../prompts/architect.prompt
 const DEFAULT_RESEARCH_PROMPT: &str = include_str!("../prompts/research.prompt");
 const DEFAULT_TODO_PROMPT: &str = include_str!("../prompts/todo.prompt");
 const DEFAULT_TEST_PROMPT: &str = include_str!("../prompts/test.prompt");
+const DEFAULT_GRAPHIC_PROMPT: &str = include_str!("../prompts/graphic.prompt");
 
 // Bundled fallback patterns (compiled in from ./prompts/patterns.json)
 const DEFAULT_PATTERNS_JSON: &str = include_str!("../prompts/patterns.json");
@@ -599,6 +600,7 @@ fn fetch_file(cli: &Cli, name: &str, fallback: Option<&str>) -> Result<String> {
         "research.prompt" => Some(DEFAULT_RESEARCH_PROMPT),
         "todo.prompt" => Some(DEFAULT_TODO_PROMPT),
         "test.prompt" => Some(DEFAULT_TEST_PROMPT),
+        "graphic.prompt" => Some(DEFAULT_GRAPHIC_PROMPT),
         "patterns.json" => Some(DEFAULT_PATTERNS_JSON),
         _ => None,
     };
