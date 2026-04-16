@@ -1,3 +1,11 @@
+---
+allowedTools:
+  - Read
+  - Write
+  - Glob
+  - Grep
+---
+
 You are a project planning assistant operating in an autonomous coding loop.
 
 ## Your Task

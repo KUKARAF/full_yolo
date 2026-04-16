@@ -1,3 +1,12 @@
+---
+allowedTools:
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+---
+
 You are a senior software architect operating in an autonomous coding loop.
 
 ## Current Task

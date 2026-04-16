@@ -1,3 +1,12 @@
+---
+allowedTools:
+  - WebSearch
+  - WebFetch
+  - Read
+  - Write
+  - Glob
+---
+
 You are a research assistant operating in an autonomous coding loop.
 
 ## Current Task

@@ -103,6 +103,12 @@ struct Cli {
     /// Permission mode passed to claude
     #[arg(long, env = "FULL_YOLO_PERMISSION_MODE", default_value = "bypass", value_enum)]
     permission_mode: PermissionMode,
+
+    /// Pass --bare to claude (skips CLAUDE.md, hooks, skills, MCP auto-discovery).
+    /// Recommended for CI / fully scripted runs to get consistent behaviour
+    /// regardless of local claude configuration.
+    #[arg(short = 'b', long, env = "FULL_YOLO_BARE")]
+    bare: bool,
 }
 
 #[derive(Debug, Clone, ValueEnum)]
@@ -293,10 +299,11 @@ fn run_iteration(cli: &Cli, work_dir: &Path, todo_path: &Path) -> Result<bool> {
         eprintln!("       - {step}");
     }
 
-    let template = fetch_file(cli, &format!("{}.prompt", item.prompt_name), None)?;
-    let prompt = fill_prompt(&template, &item.description, &item.sub_steps);
+    let raw = fetch_file(cli, &format!("{}.prompt", item.prompt_name), None)?;
+    let (meta, template) = parse_frontmatter(&raw);
+    let prompt = fill_prompt(template, &item.description, &item.sub_steps);
 
-    run_claude(cli, work_dir, &prompt)
+    run_claude(cli, work_dir, &prompt, &meta)
         .with_context(|| format!("claude failed on: {}", item.description))?;
 
     mark_done(todo_path, item.line_index)?;
@@ -316,10 +323,11 @@ fn run_plan(
         .as_deref()
         .unwrap_or("Analyse the current directory and plan the project");
 
-    let template = fetch_file(cli, "plan.prompt", Some(DEFAULT_PLAN_PROMPT))?;
-    let prompt = fill_prompt(&template, task, &[]);
+    let raw = fetch_file(cli, "plan.prompt", Some(DEFAULT_PLAN_PROMPT))?;
+    let (meta, template) = parse_frontmatter(&raw);
+    let prompt = fill_prompt(template, task, &[]);
 
-    run_claude(cli, work_dir, &prompt)?;
+    run_claude(cli, work_dir, &prompt, &meta)?;
 
     if !todo_path.exists() {
         bail!(
@@ -465,6 +473,71 @@ fn mark_done(todo_path: &Path, line_index: usize) -> Result<()> {
 
 // ─── Prompt management ────────────────────────────────────────────────────────
 
+/// Metadata parsed from YAML frontmatter at the top of a .prompt file.
+///
+/// Format:
+/// ```yaml
+/// ---
+/// allowedTools:
+///   - Read
+///   - Write
+///   - Bash
+/// ---
+/// … prompt body …
+/// ```
+#[derive(Debug, Default)]
+struct PromptMeta {
+    /// Tool names passed to `--allowed-tools` when invoking claude.
+    /// Empty means no restriction (all tools allowed).
+    allowed_tools: Vec<String>,
+}
+
+/// Split a prompt file into its frontmatter metadata and body.
+///
+/// If the file does not start with `---\n` the entire content is returned as
+/// the body with an empty `PromptMeta`.
+fn parse_frontmatter(content: &str) -> (PromptMeta, &str) {
+    let mut meta = PromptMeta::default();
+
+    let Some(rest) = content.strip_prefix("---\n") else {
+        return (meta, content);
+    };
+
+    // Find the closing `---`
+    let Some(end) = rest.find("\n---\n") else {
+        return (meta, content);
+    };
+
+    let frontmatter = &rest[..end];
+    let body = &rest[end + 5..]; // skip "\n---\n"
+
+    // Minimal YAML parser: look for `allowedTools:` then collect `  - Tool` lines
+    let mut in_tools = false;
+    for line in frontmatter.lines() {
+        let trimmed = line.trim();
+        if trimmed == "allowedTools:" || trimmed.starts_with("allowedTools:") {
+            in_tools = true;
+            // Handle inline single-value: `allowedTools: Read` (rare but handle it)
+            if let Some(val) = trimmed.strip_prefix("allowedTools:") {
+                let val = val.trim();
+                if !val.is_empty() {
+                    meta.allowed_tools.push(val.to_string());
+                    in_tools = false; // inline value, not a block list
+                }
+            }
+        } else if in_tools {
+            if let Some(tool) = trimmed.strip_prefix("- ") {
+                meta.allowed_tools.push(tool.trim().to_string());
+            } else if !line.starts_with(' ') && !line.starts_with('\t') {
+                // Indentation dropped — end of the list
+                in_tools = false;
+            }
+        }
+    }
+
+    (meta, body)
+}
+
 fn fill_prompt(template: &str, task: &str, sub_steps: &[String]) -> String {
     let steps_block = if sub_steps.is_empty() {
         "(no sub-steps provided)".to_string()
@@ -540,7 +613,7 @@ fn fetch_file(cli: &Cli, name: &str, fallback: Option<&str>) -> Result<String> {
 
 // ─── Claude runner ────────────────────────────────────────────────────────────
 
-fn run_claude(cli: &Cli, work_dir: &Path, prompt: &str) -> Result<()> {
+fn run_claude(cli: &Cli, work_dir: &Path, prompt: &str, meta: &PromptMeta) -> Result<()> {
     let mut cmd = Command::new(&cli.claude_bin);
 
     cmd.arg("--print")
@@ -548,6 +621,10 @@ fn run_claude(cli: &Cli, work_dir: &Path, prompt: &str) -> Result<()> {
         .arg(&cli.model)
         .arg("--output-format")
         .arg("text");
+
+    if cli.bare {
+        cmd.arg("--bare");
+    }
 
     match cli.permission_mode {
         PermissionMode::Bypass => {
@@ -557,6 +634,12 @@ fn run_claude(cli: &Cli, work_dir: &Path, prompt: &str) -> Result<()> {
         PermissionMode::Plan => {
             cmd.arg("--permission-mode").arg("plan");
         }
+    }
+
+    // Per-prompt tool allowlist from YAML frontmatter
+    if !meta.allowed_tools.is_empty() {
+        cmd.arg("--allowed-tools").arg(meta.allowed_tools.join(","));
+        eprintln!("    tools: {}", meta.allowed_tools.join(", "));
     }
 
     if let Some(budget) = cli.max_budget {

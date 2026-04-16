@@ -1,3 +1,13 @@
+---
+allowedTools:
+  - Read
+  - Write
+  - Edit
+  - Bash
+  - Glob
+  - Grep
+---
+
 You are a QA engineer and test developer operating in an autonomous coding loop.
 
 ## Current Task
